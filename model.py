@@ -6,9 +6,15 @@ import numpy as np
 import math
 import time
 
-if len(sys.argv) == 1:
-    print("Usage: python model.py <input_file>")
-    sys.exit(1)
+url = []
+i = 1
+while(i>0):
+    url.append(input("Enter the Steam URL of the Game: "))
+    if(input("Do you want to add more games? Y / N ") == "N"):
+        break
+    i+=1
+
+
 
 start_time = time.time()
 df = ""
@@ -20,20 +26,21 @@ except:
 
 print("Dataframe loaded in %s seconds\n" % (time.time() - start_time))
 
-input_url = sys.argv[1]
+input_url = url
 
-if input_url[len(input_url)-1] != "/":
-    input_url += "/"
+for i in range(len(input_url)):
+    if input_url[i][len(input_url[i])-1] != "/":
+        input_url[i] += "/"
 
-search_item = ""
-search_item_idx = ""
-try:
-    item = df.loc[df['url'] == input_url]
-    search_item = list(item.iloc[0])
-    search_item_idx = item.index.tolist()[0]
-except:
-    print("Error: Could not find input url")
-    sys.exit(1)
+    search_item = ""
+    search_item_idx = ""
+    try:
+        item = df.loc[df['url'] == input_url[i]]
+        search_item = list(item.iloc[0])
+        search_item_idx = item.index.tolist()[0]
+    except:
+        print("Error: Could not find input url")
+        sys.exit(1)
 
 print("Selected item: %s\n" % search_item[1])
 
@@ -57,11 +64,12 @@ for i in df.iterrows():
     idx += 1
     if idx % 4032 == 0:
         print(str(((idx + 1) / 40328) * 100) + "%")
-    result.append({
-        "url": i[1][0],
-        "cos_dist": float(spatial.distance.cosine(input_item, genre_y[idx-1])),
-        "review_euc_dist": float(spatial.distance.euclidean(input_item_review, i[1][4:7]))
-    })
+    if(i[1][0] in url):
+        result.append({
+            "url": i[1][0],
+            "cos_dist": float(spatial.distance.cosine(input_item, genre_y[idx-1])),
+            "review_euc_dist": float(spatial.distance.euclidean(input_item_review, i[1][4:7]))
+        })
 
 results_df = pd.DataFrame(result)
 results_df.sort_values(by=['cos_dist', 'review_euc_dist'], inplace=True)
