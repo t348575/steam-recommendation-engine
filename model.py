@@ -6,9 +6,15 @@ import numpy as np
 import math
 import time
 
-if len(sys.argv) == 1:
-    print("Usage: python model.py <input_file>")
-    sys.exit(1)
+input_url = []
+i = 1
+while(i>0):
+    input_url.append(input("Enter the Steam URL of the Game: "))
+    if(input("Do you want to add more games? Y / N ") == "N"):
+        break
+    i+=1
+
+
 
 start_time = time.time()
 df = ""
@@ -20,22 +26,20 @@ except:
 
 print("Dataframe loaded in %s seconds\n" % (time.time() - start_time))
 
-input_url = sys.argv[1]
+search_item = ''
+search_item_idx = []
+for i in range(len(input_url)):
+    if input_url[i][len(input_url[i])-1] != "/":
+        input_url[i] += "/"
+    try:
+        item = df.loc[df['url'] == input_url[i]]
+        search_item = list(item.iloc[0])
+        search_item_idx.append(item.index.tolist()[0])
+    except:
+        print("Error: Could not find input url")
+        sys.exit(1)
+    print("Selected item: %s\n" % search_item[1])
 
-if input_url[len(input_url)-1] != "/":
-    input_url += "/"
-
-search_item = ""
-search_item_idx = ""
-try:
-    item = df.loc[df['url'] == input_url]
-    search_item = list(item.iloc[0])
-    search_item_idx = item.index.tolist()[0]
-except:
-    print("Error: Could not find input url")
-    sys.exit(1)
-
-print("Selected item: %s\n" % search_item[1])
 
 start_time = time.time()
 multilabel_binarizer = MultiLabelBinarizer()
@@ -46,26 +50,33 @@ print("Initialized model in %s seconds\n" % (time.time() - start_time))
 print("Model ready!\n\nRunning model...\n")
 
 start_time = time.time()
-input_item = genre_y[search_item_idx]
-input_item_review = list(df.iloc[search_item_idx][4:7])
+
 
 start_time = time.time()
-idx = 0
 result = []
 
-for i in df.iterrows():
-    idx += 1
-    if idx % 4032 == 0:
-        print(str(((idx + 1) / 40328) * 100) + "%")
-    result.append({
-        "url": i[1][0],
-        "cos_dist": float(spatial.distance.cosine(input_item, genre_y[idx-1])),
-        "review_euc_dist": float(spatial.distance.euclidean(input_item_review, i[1][4:7]))
-    })
 
-results_df = pd.DataFrame(result)
-results_df.sort_values(by=['cos_dist', 'review_euc_dist'], inplace=True)
+for j in search_item_idx:
+    idx = 0
+    input_item = genre_y[j]
+    input_item_review = list(df.iloc[j][4:7])   
+    result.append([])
+    n = len(result) - 1
+    
+    for i in df.iterrows():
+        idx += 1
+        if idx % 4032 == 0:
+            print(str(((idx + 1) / 40328) * 100) + "%")
+        result[n].append({
+            "url": i[1][0],
+            "cos_dist": float(spatial.distance.cosine(input_item, genre_y[idx-1])),
+            "review_euc_dist": float(spatial.distance.euclidean(input_item_review, i[1][4:7]))
+        })
+    
 
+for j in result:
+    results_df = pd.DataFrame(j)
+    results_df.sort_values(by=['cos_dist', 'review_euc_dist'], inplace=True)
+    print(results_df.head(20))
+    
 print("\nModel ran in %s seconds\n" % (time.time() - start_time))
-
-print(results_df.head(20))
