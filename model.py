@@ -10,7 +10,8 @@ input_url = []
 i = 1
 while(i>0):
     input_url.append(input("Enter the Steam URL of the Game: "))
-    if(input("Do you want to add more games? Y / N ") == "N"):
+    item = input("Do you want to add more games? (y/n): ")
+    if item == "N" or item == "n":
         break
     i+=1
 
@@ -89,6 +90,7 @@ squashed = {}
 for j in result:
     results_df = pd.DataFrame(j)
     results_df.sort_values(by=['cos_dist', 'review_euc_dist'], inplace=True)
+    results_df.drop(index=results_df.index[0], axis=0, inplace=True)
     idx = 0
     
     if reviewStatus[idx]:
